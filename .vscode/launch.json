@@ -3,5 +3,17 @@
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
-    "configurations": []
+    "configurations": [
+        {
+            "name": "[LAB 5] Scraper",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/lab_5_scraper/scraper.py",
+            "cwd": "${workspaceFolder}/lab_5_scraper",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        }
+    ]
 }

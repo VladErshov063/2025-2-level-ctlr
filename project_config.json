@@ -1,5 +1,16 @@
 {
-    "labs": [],
+    "labs": [
+        {
+            "name": "lab_5_scraper",
+            "coverage": 98,
+            "stubs": [
+                "scraper.py"
+            ],
+            "settings": {
+               "ignore": ["lab_6_pipeline"]
+            }
+        }
+    ],
     "addons": [
         {
             "name": "core_utils",
@@ -24,6 +35,49 @@
         ],
         "pr_name_regex": "(?:\\[PROJECT\\]\\s*)?(Scraper|Pipeline|Final Project), [\\w\\s\\d]+ \\w+ - 2\\dFPL\\d",
         "pr_name_example": "Scraper, Andrei Kashchikhin - 21FPL2 \nPipeline, Andrei Kashchikhin - 21FPL2 \n[PROJECT] Final Project, Team 7 Mandelstamm - 22FPL2"
+    },
+    "stubs_config": {
+        "accepted_modules": {
+            "typing": [
+                "*"
+            ],
+            "json": [
+                "load"
+            ],
+            "pathlib": [
+                "*"
+            ],
+            "requests": [
+                "*"
+            ],
+            "bs4": [
+                "Tag",
+                "BeautifulSoup"
+            ],
+            "core_utils.config_dto": [
+                "ConfigDTO"
+            ],
+            "datetime": [
+                "*"
+            ],
+            "core_utils.article.article": [
+                "Article"
+            ],
+            "core_utils.pipeline": [
+                "PipelineProtocol",
+                "LibraryWrapper",
+                "AbstractCoNLLUAnalyzer",
+                "UDPipeDocument",
+                "UnifiedCoNLLUDocument",
+                "StanzaDocument",
+                "UnifiedCoNLLUDocument",
+                "CoNLLUDocument",
+                "TreeNode"
+            ],
+            "networkx": [
+                "DiGraph"
+            ]
+        }
     },
     "newline_config": [
         "venv",
