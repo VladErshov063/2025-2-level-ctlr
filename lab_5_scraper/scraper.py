@@ -7,7 +7,7 @@ import json
 import pathlib
 import re
 import shutil
-from typing import Any, Callable
+from typing import Any
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -438,8 +438,8 @@ class HTMLParser:
             article_soup (bs4.BeautifulSoup): BeautifulSoup instance
         """
         selectors = [
-        'article', 'div.article-body', 'div.post-content', 'div.content',
-        'div.entry-content', 'div.main-content', 'section.content'
+            'article', 'div.article-body', 'div.post-content', 'div.content',
+            'div.entry-content', 'div.main-content', 'section.content'
         ]
         text_parts = []
         for selector in selectors:
@@ -448,9 +448,21 @@ class HTMLParser:
                 for elem in elements:
                     text_parts.append(elem.get_text(strip=True))
                 break
+
         if not text_parts:
             paragraphs = article_soup.find_all('p')
-            text_parts = [p.get_text(strip=True) for p in paragraphs]
+            if paragraphs:
+                text_parts = [p.get_text(strip=True) for p in paragraphs]
+            else:
+                body = article_soup.find('body')
+                if body:
+                    for tag in body(['script', 'style']):
+                        tag.decompose()
+                    text = body.get_text(separator=' ', strip=True)
+                    text_parts = [text]
+                else:
+                    text_parts = [article_soup.get_text(separator=' ', strip=True)]
+
         self.article.text = ' '.join(text_parts)
 
     def _extract_authors(self, author_value: str) -> list[str]:
@@ -468,28 +480,33 @@ class HTMLParser:
         authors = [a.strip() for a in author_value.split(',') if a.strip()]
         return authors if authors else ["NOT FOUND"]
 
+    def _find_date_published(self, data: Any) -> str | None:
+        """Recursively search for 'datePublished' in JSON data."""
+        if isinstance(data, dict):
+            if 'datePublished' in data and isinstance(data['datePublished'], str):
+                return data['datePublished']
+            for value in data.values():
+                result = self._find_date_published(value)
+                if result:
+                    return result
+        elif isinstance(data, list):
+            for item in data:
+                result = self._find_date_published(item)
+                if result:
+                    return result
+        return None
+
     def _extract_json_ld_date(self, soup: BeautifulSoup) -> str | None:
         """Extract date from JSON-LD script."""
-        ld_scripts = soup.find_all('script', type='application/ld+json')
-        for script in ld_scripts:
+        for script in soup.find_all('script', type='application/ld+json'):
             content = script.string
-            if not content or not isinstance(content, str):
+            if not isinstance(content, str):
                 continue
             try:
                 data = json.loads(content)
-                if isinstance(data, dict):
-                    stack = [data]
-                    while stack:
-                        obj = stack.pop()
-                        if isinstance(obj, dict):
-                            if 'datePublished' in obj:
-                                val = obj['datePublished']
-                                if isinstance(val, str):
-                                    return val
-                            for val in obj.values():
-                                stack.append(val)
-                        elif isinstance(obj, list):
-                            stack.extend(obj)
+                date = self._find_date_published(data)
+                if date:
+                    return date
             except (json.JSONDecodeError, TypeError):
                 continue
         return None
@@ -664,22 +681,21 @@ class HTMLParser:
             'мая': 5, 'июня': 6, 'июля': 7, 'августа': 8,
             'сентября': 9, 'октября': 10, 'ноября': 11, 'декабря': 12
         }
-        patterns: list[tuple[str, Callable[..., datetime.datetime | None]]] = [
+        patterns = [
             (r'(\d{1,2})\s+([а-я]+)\s+(\d{4})', self._parse_russian_no_time),
             (r'(\d{1,2})\s+([а-я]+)\s+(\d{4}),\s+(\d{2}):(\d{2})', self._parse_russian_with_time),
             (r'(\d{1,2})\.(\d{1,2})\.(\d{4})', self._parse_dot_date),
             (r'(\d{4})-(\d{2})-(\d{2})', self._parse_iso_date),
             (r'(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):\d{2}', self._parse_iso_with_time),
         ]
+        result = None
         for pattern, parse_func in patterns:
             match = re.search(pattern, date_str)
             if match:
-                result = parse_func(
-                    match, russian_months if 'russian' in parse_func.__name__ else None
-                    )
+                result = parse_func(match, russian_months)
                 if result is not None:
-                    return result
-        return None
+                    break
+        return result
 
     def unify_date_format(self, date_str: str) -> datetime.datetime | None:
         """
@@ -694,18 +710,13 @@ class HTMLParser:
         result = self._parse_russian_date(date_str)
         if result is None:
             formats = [
-                '%Y-%m-%dT%H:%M:%S',
-                '%Y-%m-%d %H:%M:%S',
-                '%Y-%m-%d',
-                '%d/%m/%Y',
-                '%m/%d/%Y',
-                '%B %d, %Y',
-                '%d %B %Y',
-                '%d.%m.%Y',
+                '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d %H:%M:%S', '%Y-%m-%d',
+                '%d/%m/%Y', '%m/%d/%Y', '%B %d, %Y', '%d %B %Y', '%d.%m.%Y'
             ]
             for fmt in formats:
                 try:
-                    return datetime.datetime.strptime(date_str[:len(fmt)], fmt)
+                    result = datetime.datetime.strptime(date_str[:len(fmt)], fmt)
+                    break
                 except ValueError:
                     continue
         return result
