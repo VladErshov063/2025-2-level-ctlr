@@ -1,7 +1,7 @@
 {
     "seed_urls": ["https://rus.theater/"],
-    "headers": {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
-    "total_articles_to_find_and_parse": 100,
+    "headers": {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"},
+    "total_articles_to_find_and_parse": 10,
     "encoding": "utf-8",
     "timeout": 30,
     "should_verify_certificate": true,

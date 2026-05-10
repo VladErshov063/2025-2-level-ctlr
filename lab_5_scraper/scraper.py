@@ -253,6 +253,8 @@ class Crawler:
         href = article_bs.get("href")
         if not href or not isinstance(href, str):
             return ""
+        if href.startswith(('#', 'javascript:')):
+            return ""
         return urljoin(self._base_url, href)
 
     def find_articles(self) -> None:
@@ -316,7 +318,7 @@ class CrawlerRecursive(Crawler):
         self.start_url = seed_urls[0]
         self.start_domain = urlparse(self.start_url).netloc
         self.num_articles = self.config.get_num_articles()
-        self.url_pattern = re.compile(r"/\d{4}/\d{2}/\d{2}/[a-z0-9\-]+\.?html?$")
+        self.url_pattern = re.compile(r'^/[a-zа-яё\-]{20,}/$', re.IGNORECASE)
         self._visited: set[str] = set()
         self._load_state()
 
@@ -345,9 +347,14 @@ class CrawlerRecursive(Crawler):
         Args:
             url (str): URL to crawl
         """
-        if depth > 10 or len(self.urls) >= self.num_articles or url in self._visited:
+        print(f"[DEBUG] Crawling: {url} | depth={depth} | found={len(self.urls)}/{self.num_articles}")
+
+        parsed = urlparse(url)
+        clean_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+        
+        if depth > 10 or len(self.urls) >= self.num_articles or clean_url in self._visited:
             return
-        self._visited.add(url)
+        self._visited.add(clean_url)
 
         response = make_request(url, self.config)
         if not response or 'text/html' not in response.headers.get('Content-Type', ''):
@@ -358,25 +365,35 @@ class CrawlerRecursive(Crawler):
         except (ValueError, UnicodeDecodeError, LookupError):
             return
 
-        self._base_url = url
+        self._base_url = clean_url
 
         for link in soup.find_all('a', href=True):
             full_url = self._extract_url(link)
             if not full_url:
                 continue
 
-            link_domain = urlparse(full_url).netloc
+            if full_url.startswith(('#', 'javascript:')) or '#' in full_url:
+                continue
+            if '?' in full_url or full_url.endswith(('.doc', '.pdf', '.jpg', '.png')):
+                continue
+
+            link_parsed = urlparse(full_url)
+            clean_link = f"{link_parsed.scheme}://{link_parsed.netloc}{link_parsed.path}"
+
+            link_domain = link_parsed.netloc
             if link_domain != self.start_domain:
                 continue
 
-            if self.url_pattern.search(full_url) and full_url not in self.urls:
-                self.urls.append(full_url)
+            path = link_parsed.path
+            if self.url_pattern.search(path) and clean_link not in self.urls:
+                self.urls.append(clean_link)
                 self._save_state()
+                print(f"[DEBUG] Article found: {clean_link}")
                 if len(self.urls) >= self.num_articles:
                     return
 
             if len(self.urls) < self.num_articles:
-                self._crawl(full_url, depth + 1)
+                self._crawl(clean_link, depth + 1)
                 if len(self.urls) >= self.num_articles:
                     return
 
