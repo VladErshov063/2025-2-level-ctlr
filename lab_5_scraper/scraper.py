@@ -347,11 +347,13 @@ class CrawlerRecursive(Crawler):
         Args:
             url (str): URL to crawl
         """
-        print(f"[DEBUG] Crawling: {url} | depth={depth} | found={len(self.urls)}/{self.num_articles}")
+        print(f"[DEBUG] Crawling: {url} | depth={depth} | found={len(
+            self.urls)}/{self.num_articles}"
+            )
 
         parsed = urlparse(url)
         clean_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
-        
+
         if depth > 10 or len(self.urls) >= self.num_articles or clean_url in self._visited:
             return
         self._visited.add(clean_url)
