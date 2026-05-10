@@ -7,6 +7,7 @@ import json
 import pathlib
 import re
 import shutil
+from typing import Any, Callable
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -14,8 +15,7 @@ from bs4 import BeautifulSoup, Tag
 from requests.exceptions import RequestException
 
 from core_utils.article.article import Article
-from core_utils.article.io import to_meta
-from core_utils.article.io import to_raw
+from core_utils.article.io import to_meta, to_raw
 from core_utils.config_dto import ConfigDTO
 from core_utils.constants import CRAWLER_CONFIG_PATH
 
@@ -613,6 +613,42 @@ class HTMLParser:
 
         self.article.topics = self._extract_topics(article_soup)
 
+    def _parse_russian_no_time(
+            self, match: re.Match, months: dict[str, int]
+            ) -> datetime.datetime | None:
+        day = int(match.group(1))
+        month_name = match.group(2)
+        year = int(match.group(3))
+        month = months.get(month_name)
+        if month is None:
+            return None
+        return datetime.datetime(year, month, day)
+
+    def _parse_russian_with_time(
+            self, match: re.Match, months: dict[str, int]
+            ) -> datetime.datetime | None:
+        day = int(match.group(1))
+        month_name = match.group(2)
+        year = int(match.group(3))
+        hour = int(match.group(4))
+        minute = int(match.group(5))
+        month = months.get(month_name)
+        if month is None:
+            return None
+        return datetime.datetime(year, month, day, hour, minute)
+
+    def _parse_dot_date(self, match: re.Match, _: Any = None) -> datetime.datetime:
+        day, month, year = map(int, match.groups())
+        return datetime.datetime(year, month, day)
+
+    def _parse_iso_date(self, match: re.Match, _: Any = None) -> datetime.datetime:
+        year, month, day = map(int, match.groups())
+        return datetime.datetime(year, month, day)
+
+    def _parse_iso_with_time(self, match: re.Match, _: Any = None) -> datetime.datetime:
+        year, month, day, hour, minute = map(int, match.groups())
+        return datetime.datetime(year, month, day, hour, minute)
+
     def _parse_russian_date(self, date_str: str) -> datetime.datetime | None:
         """
         Parse Russian date formats (e.g., "26 января 2021").
@@ -628,45 +664,22 @@ class HTMLParser:
             'мая': 5, 'июня': 6, 'июля': 7, 'августа': 8,
             'сентября': 9, 'октября': 10, 'ноября': 11, 'декабря': 12
         }
-        patterns = [
-            (r'(\d{1,2})\s+([а-я]+)\s+(\d{4})', False, 'russian'),
-            (r'(\d{1,2})\s+([а-я]+)\s+(\d{4}),\s+(\d{2}):(\d{2})', True, 'russian'),
-            (r'(\d{1,2})\.(\d{1,2})\.(\d{4})', False, 'dot'),
-            (r'(\d{4})-(\d{2})-(\d{2})', False, 'iso'),
-            (r'(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):\d{2}', True, 'iso_t'),
+        patterns: list[tuple[str, Callable[..., datetime.datetime | None]]] = [
+            (r'(\d{1,2})\s+([а-я]+)\s+(\d{4})', self._parse_russian_no_time),
+            (r'(\d{1,2})\s+([а-я]+)\s+(\d{4}),\s+(\d{2}):(\d{2})', self._parse_russian_with_time),
+            (r'(\d{1,2})\.(\d{1,2})\.(\d{4})', self._parse_dot_date),
+            (r'(\d{4})-(\d{2})-(\d{2})', self._parse_iso_date),
+            (r'(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):\d{2}', self._parse_iso_with_time),
         ]
-
-        result = None
-        for pattern, has_time, ptype in patterns:
+        for pattern, parse_func in patterns:
             match = re.search(pattern, date_str)
-            if not match:
-                continue
-            if ptype == 'russian':
-                day = int(match.group(1))
-                month_name = match.group(2)
-                year = int(match.group(3))
-                month = russian_months.get(month_name)
-                if month is None:
-                    continue
-                if has_time:
-                    hour = int(match.group(4))
-                    minute = int(match.group(5))
-                    result = datetime.datetime(year, month, day, hour, minute)
-                else:
-                    result = datetime.datetime(year, month, day)
-                break
-            if ptype == 'dot':
-                day, month, year = map(int, match.groups())
-                result = datetime.datetime(year, month, day)
-                break
-            if ptype == 'iso_t':
-                year, month, day, hour, minute = map(int, match.groups())
-                result = datetime.datetime(year, month, day, hour, minute)
-                break
-            year, month, day = map(int, match.groups())
-            result = datetime.datetime(year, month, day)
-            break
-        return result
+            if match:
+                result = parse_func(
+                    match, russian_months if 'russian' in parse_func.__name__ else None
+                    )
+                if result is not None:
+                    return result
+        return None
 
     def unify_date_format(self, date_str: str) -> datetime.datetime | None:
         """
