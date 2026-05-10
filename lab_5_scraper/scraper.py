@@ -108,7 +108,7 @@ class Config:
             raise IncorrectNumberOfArticlesError(
                 "total_articles_to_find_and_parse must be an integer"
             )
-        if not (1 <= total <= 150):
+        if not 1 <= total <= 150:
             if total < 1:
                 raise IncorrectNumberOfArticlesError(
                     "total_articles_to_find_and_parse must be a positive integer"
