@@ -321,12 +321,12 @@ class CrawlerRecursive(Crawler):
         self.url_pattern = re.compile(r'^/[a-zа-яё\-]{20,}/$', re.IGNORECASE)
         self._visited: set[str] = set()
         self._load_state()
+        self._current_target = 0
 
     def _save_state(self) -> None:
         """Save current crawler state to file."""
         state = {
-            "urls": self.urls,
-            "visited": list(self._visited),
+            "urls": self.urls
         }
         self.STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
         with open(self.STATE_FILE, "w", encoding="utf-8") as f:
@@ -338,7 +338,6 @@ class CrawlerRecursive(Crawler):
             with open(self.STATE_FILE, "r", encoding="utf-8") as f:
                 state = json.load(f)
             self.urls = state.get("urls", [])
-            self._visited = set(state.get("visited", []))
 
     def _crawl(self, url: str, depth: int = 0) -> None:
         """
@@ -354,7 +353,7 @@ class CrawlerRecursive(Crawler):
         parsed = urlparse(url)
         clean_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
 
-        if depth > 10 or len(self.urls) >= self.num_articles or clean_url in self._visited:
+        if depth > 10 or len(self.urls) >= self._current_target or clean_url in self._visited:
             return
         self._visited.add(clean_url)
 
@@ -391,12 +390,12 @@ class CrawlerRecursive(Crawler):
                 self.urls.append(clean_link)
                 self._save_state()
                 print(f"[DEBUG] Article found: {clean_link}")
-                if len(self.urls) >= self.num_articles:
+                if len(self.urls) >= self._current_target:
                     return
 
-            if len(self.urls) < self.num_articles:
+            if len(self.urls) < self._current_target:
                 self._crawl(clean_link, depth + 1)
-                if len(self.urls) >= self.num_articles:
+                if len(self.urls) >= self._current_target:
                     return
 
     def find_articles(self) -> None:
@@ -405,6 +404,7 @@ class CrawlerRecursive(Crawler):
         """
         if not self.start_url:
             return
+        self._current_target = len(self.urls) + self.num_articles
         self._crawl(self.start_url)
         self._save_state()
 
@@ -438,7 +438,7 @@ class HTMLParser:
         """
         selectors = [
             'article', 'div.article-body', 'div.post-content', 'div.content',
-            'div.entry-content', 'div.main-content', 'section.content'
+            'div.entry-content', 'div.main-content', 'section.content', 'body'
         ]
         text_parts = []
         for selector in selectors:
@@ -789,7 +789,7 @@ def main() -> None:
         return
 
     print(f"Found {len(crawler.urls)} articles")
-    for idx, url in enumerate(crawler.urls[:config.get_num_articles()], start=1):
+    for idx, url in enumerate(crawler.urls, start=1):
         parser = HTMLParser(url, idx, config)
         try:
             article = parser.parse()
@@ -800,12 +800,12 @@ def main() -> None:
             print(f"Parsing error for article {idx}: {exc}")
             continue
 
-        if article:
+        if article and len(article.text.strip()) >= 50:
             to_raw(article)
             to_meta(article)
             print(f"Saved article {idx}: {url}")
         else:
-            print(f"Failed to parse article {idx}: {url}")
+            print(f"Skipping article {idx}: text too short or missing")
 
 if __name__ == "__main__":
     main()
