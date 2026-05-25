@@ -58,7 +58,7 @@ https
 inan
 instantiation
 json
-kazyulina
+kashchikhin
 klimova
 kwargs
 lemmatization

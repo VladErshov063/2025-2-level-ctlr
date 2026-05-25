@@ -26,7 +26,8 @@ def setup_reference_processing() -> Generator[None, None, None]:
     pipe = TextProcessingPipeline(corpus_manager)
     pipe.run()
     yield
-    shutil.rmtree(TEST_PATH)
+    if TEST_PATH.is_dir():
+        shutil.rmtree(TEST_PATH)
 
 
 @pytest.fixture(scope="function")
@@ -43,7 +44,6 @@ def loaded_texts(setup_reference_processing: None) -> Generator[tuple[str, str],
     yield reference, processed
 
 
-@pytest.mark.mark4
 @pytest.mark.mark4
 @pytest.mark.stage_3_3_admin_data_processing
 @pytest.mark.lab_6_pipeline

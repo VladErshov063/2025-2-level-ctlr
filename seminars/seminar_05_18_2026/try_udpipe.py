@@ -13,12 +13,11 @@ Make sure to install the library in your working environment!
 """
 
 from pathlib import Path
-from typing import cast
 
 from core_utils.constants import PROJECT_ROOT
 
 try:
-    import spacy_udpipe  # type: ignore
+    import spacy_udpipe
     from spacy.language import Language
     from spacy_conll import ConllParser  # type: ignore
 except ImportError:
@@ -45,8 +44,7 @@ def load_model(model_path: Path) -> Language:
     Returns:
         spacy.Language: Language model
     """
-    model = cast(Language, spacy_udpipe.load_from_path(lang="ru", path=str(model_path)))
-    return model
+    return spacy_udpipe.load_from_path(lang="ru", path=str(model_path))
 
 
 def explore_model(model: Language) -> dict | None:

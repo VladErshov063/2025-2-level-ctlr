@@ -6,10 +6,18 @@ Interface definitions for text processing pipelines.
 from dataclasses import dataclass
 from typing import Protocol
 
-from spacy import Language
-from spacy.tokens import Doc
+from quality_control.console_logging import get_child_logger
 
 from core_utils.article.article import Article
+
+logger = get_child_logger(__file__)
+try:
+    from spacy.language import Language
+    from spacy.tokens import Doc
+except ImportError:
+    Language = None  # type: ignore
+    Doc = None  # type: ignore
+    logger.warning("No libraries installed. Failed to import.")
 
 
 class PipelineProtocol(Protocol):
