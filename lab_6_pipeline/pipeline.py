@@ -8,7 +8,6 @@ from __future__ import annotations
 import pathlib
 import re
 import sys
-from collections import Counter
 from typing import cast
 
 from core_utils.article.article import Article, ArtifactType
@@ -321,10 +320,11 @@ class POSFrequencyPipeline:
             dict[str, int]: POS frequencies
         """
         doc = self._analyzer.from_conllu(article)
-        pos_counter = Counter()
+        pos_counter = {}
         for token in doc:
-            pos_counter[token.pos_] += 1
-        return dict(pos_counter)
+            pos = token.pos_
+            pos_counter[pos] = pos_counter.get(pos, 0) + 1
+        return pos_counter
 
     def run(self) -> None:
         """

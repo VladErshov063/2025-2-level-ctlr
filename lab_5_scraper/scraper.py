@@ -789,23 +789,28 @@ def main() -> None:
         return
 
     print(f"Found {len(crawler.urls)} articles")
-    for idx, url in enumerate(crawler.urls, start=1):
-        parser = HTMLParser(url, idx, config)
+    saved_count = 0
+    for url in crawler.urls:
+        parser = HTMLParser(url, saved_count + 1, config)
         try:
             article = parser.parse()
         except requests.RequestException as exc:
-            print(f"Network error parsing article {idx}: {exc}")
+            print(f"Network error parsing article: {exc}")
             continue
         except (AttributeError, ValueError) as exc:
-            print(f"Parsing error for article {idx}: {exc}")
+            print(f"Parsing error for article: {exc}")
             continue
 
         if article and len(article.text.strip()) >= 50:
+            saved_count += 1
+            article.article_id = saved_count
             to_raw(article)
             to_meta(article)
-            print(f"Saved article {idx}: {url}")
+            print(f"Saved article {saved_count}: {url}")
         else:
-            print(f"Skipping article {idx}: text too short or missing")
+            print("Skipping article: text too short or missing")
+
+    print(f"Successfully saved {saved_count} articles")
 
 if __name__ == "__main__":
     main()
