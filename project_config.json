@@ -40,8 +40,8 @@
             "Evgraff2005",
             "EIzharikov"
         ],
-        "pr_name_regex": "(?:\\[PROJECT\\]\\s*)?(Scraper|Pipeline|Final Project), [\\w\\s\\d]+ \\w+ - 2\\dFPL\\d",
-        "pr_name_example": "Scraper, Andrei Kashchikhin - 21FPL2 \nPipeline, Andrei Kashchikhin - 21FPL2 \n[PROJECT] Final Project, Andrei Kashchikhin - 21FPL2"
+        "pr_name_regex": "(?:\\[PROJECT\\]\\s*)?(Scraper|Pipeline|Final Project), [\\w\\s\\d]+ - 2\\dFPL\\d",
+        "pr_name_example": "Scraper, Andrei Kashchikhin - 21FPL2 \nPipeline, Andrei Kashchikhin - 21FPL2 \n[PROJECT] Final Project, Team 7 - 21FPL2"
     },
     "stubs_config": {
         "accepted_modules": {
