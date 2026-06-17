@@ -1,0 +1,50 @@
+{
+  "participants": [
+    "Алиев Теймур",
+    "Руина Светлана",
+    "Ершов Владислав",
+    "Балаганина Мария"
+  ],
+  "_notes": {
+    "student_name": "Имя и фамилия студента",
+    "resource_url": "Ссылка на ресурс, откуда были скачаны тексты",
+    "text_types": "Типы/жанры скачанных с ресурса текстов",
+    "texts_downloaded": "Количество скачанных текстов",
+    "total_tokens": "Общее количество токенов во всех скачанных текстах студента",
+    "tokens_analyzed": "Количество токенов, которые попали в ручную валидацию"
+  },
+  "corpus": [
+    {
+      "student_name": "Алиев Теймур",
+      "resource_url": "https://ru.wikisource.org/wiki",
+      "text_types": ["Драматургия"],
+      "texts_downloaded": 20,
+      "total_tokens": 253573,
+      "tokens_analyzed": 351
+    },
+    {
+      "student_name": "Руина Светлана",
+      "resource_url": "http://isaeva.ru",
+      "text_types": ["Пьесы"],
+      "texts_downloaded": 20,
+      "total_tokens": 181836,
+      "tokens_analyzed": 352
+    },
+    {
+      "student_name": "Ершов Владислав",
+      "resource_url": "https://rus.theater",
+      "text_types": ["Новостные статьи"],
+      "texts_downloaded": 20,
+      "total_tokens": 107538,
+      "tokens_analyzed": 398
+    },
+    {
+      "student_name": "Балаганина Мария",
+      "resource_url": "https://mnogo-smysla.ru",
+      "text_types": ["Современная драматургия"],
+      "texts_downloaded": 20,
+      "total_tokens": 24500,
+      "tokens_analyzed": 312
+    }
+  ]
+}

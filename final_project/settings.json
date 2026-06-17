@@ -1,8 +1,8 @@
 {
-  "target_score": 0,
+  "target_score": 10,
   "parameters": {
     "ctlr": {
-      "project_team": 1
+      "project_team": 3
     }
   }
 }
